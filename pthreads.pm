@@ -7,41 +7,80 @@ use constant {
   PT_YIELDED => 3,
 };
 
-use Filter::Util::Call;
+use Exporter 'import';
+@EXPORT = qw(PT_WAITING PT_EXITED PT_ENDED PT_YIELDED);
 
-sub import {
-  my ($type) = @_;
-  my ($ref) = [];
-  filter_add(bless $ref);
-}
+use Text::Balanced qw (
+  extract_codeblock
+);
 
-sub filter {
-  my ($self) = @_;
-  my ($status);
-  if (($status = filter_read()) > 0) {
-    PARSE: {
-      /PT_BEGIN\(\$thread\);/ and do {
-        s/PT_BEGIN\(\$thread\);/PT_THREAD: { my \$PT_THREAD_STATE = \$thread->{state}; \$PT_THREAD_STATE eq 0 and do {/g;
+use Filter::Simple;
+
+#    $_ = "use constant { PT_WAITING => 0, PT_EXITED => 1, PT_ENDED => 2, PT_YIELDED => 3 };
+#".$_;
+
+#    s/PT_BEGIN\(\$thread\);/PT_THREAD: { my \$PT_THREAD_STATE = \$thread->{state}; \$PT_THREAD_STATE eq 0 and do {/g;
+#    s/PT_YIELD;/\$thread->{state} = __LINE__; return PT_YIELDED; }; \$PT_THREAD_STATE eq __LINE__ and do {/g;
+#    s/PT_YIELD_UNTIL\(\$cond\)/\$thread->{state} = __LINE__; return PT_YIELDED; }; \$PT_THREAD_STATE eq __LINE__ and do { return PT_YIELDED unless (\$cond)/g;
+#    s/PT_EXIT\(\$thread\)/}; \$thread->{state} = 0; return PT_EXITED; }/g;
+#    print $_;
+
+FILTER_ONLY
+  code      => sub {
+   
+  my $code = $_;
+  
+  while(1) {
+    my $thread = " - no PT_BEGIN before use of thread - ";
+    if ($code =~ /PT_BEGIN\s*(?=\()/s) {
+      if ($') {
+        my $before = $`;
+        my $after = $';
+        my ($match,$remains,$prefix) = extract_codeblock($after,"()");
+        print "PT_BEGIN match: $match\n";
+        $match =~ /(^\()(.*(?=\)))(\)$)/;
+        print "contains: $2\n" if $2;
+        $thread = $2 if defined $2;
+        $remains =~ s/^\s*;//sg;
+        $code=$before."PT_THREAD: { my \$PT_THREAD_STATE = ".$thread."->{state}; \$PT_THREAD_STATE eq 0 and do {".$remains;
+      }
+      while (1) {
+        if ($code =~ /PT_YIELD_UNTIL\s*(?=\()/s) {
+          if ($') {
+            my $before = $`;
+            my $after = $';
+            my ($match,$remains,$prefix) = extract_codeblock($after,"()");
+            print "PT_YIELD_UNTIL match: $match\n";
+            $match =~ /(^\()(.*(?=\)))(\)$)/;
+            print "contains: $2\n" if $2;
+            my $cond = $2 if defined $2;
+            $remains =~ s/^\s*;//sg;
+            $code=$before.$thread."->{state} = __LINE__; return PT_YIELDED; }; \$PT_THREAD_STATE eq __LINE__ and do { return PT_YIELDED unless ($cond);".$remains;
+          }
+          next;
+        }
+        if ($code =~ /PT_YIELD\s*;/s) {
+          print "PT_YIELD match: $&\n";
+          $code = $`.$thread."->{state} = __LINE__; return PT_YIELDED; }; \$PT_THREAD_STATE eq __LINE__ and do {".$';
+          next;
+        }
+        if ($code =~ /PT_EXIT\s*;/s) {
+          print "PT_EXIT match: $&\n";
+          $code = $`."}; ".$thread."->{state} = 0; return PT_EXITED; }".$';
+        }
         last;
-      };
-      /PT_YIELD;/ and do {
-        s/PT_YIELD/\$thread->{state} = __LINE__; return PT_YIELDED; }; \$PT_THREAD_STATE eq __LINE__ and do {/g;
-        last;
-      };
-      /PT_YIELD_UNTIL\(\$cond\)/ and do {
-        s/PT_YIELD_UNTIL\(\$cond\)/\$thread->{state} = __LINE__; return PT_YIELDED; }; \$PT_THREAD_STATE eq __LINE__ and do { return PT_YIELDED unless (\$cond)/g;
-        print $_;
-        last;
-      };
-      /PT_EXIT\(\$thread\);/ and do {
-        s/PT_EXIT\(\$thread\)/}; \$thread->{state} = 0; return PT_EXITED; }/g;
-        last;
-      };
-    };
-    print $_;
+      }
+      next;
+    }
+    last;
   };
-  $status;
-}
+  
+  print $code;
+  
+  $_ = $code;
+  
+  };
+
 1;
 
 #typedef unsigned short lc_t;

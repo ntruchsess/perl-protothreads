@@ -1,15 +1,6 @@
 package ProtoThreads;
 
-use strict;
-use warnings;
 use pthreads;
-
-use constant {
-  PT_WAITING => 0,
-  PT_EXITED => 1,
-  PT_ENDED => 2,
-  PT_YIELDED => 3,
-};
 
 our %threads = ();
 
@@ -22,10 +13,10 @@ sub execute($$) {
   print "second\n";
   PT_YIELD_UNTIL($cond);
   print "third\n";
-  PT_EXIT($thread);
+  PT_EXIT;
 };
 
-#PI_INIT
+#PT_INIT
 my $thread = { state => 0 };
 my $condition = 1;
 my $continue = time+5;
