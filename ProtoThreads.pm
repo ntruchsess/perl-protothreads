@@ -17,29 +17,28 @@ sub execute($$) {
   my ($thread,$cond) = @_;
   
   #PT_BEGIN($thread);
-  PT_THREAD: { my $PT_THREAD_STATE = $thread->{state}; $PT_THREAD_STATE eq 0 and do {
-      print "first\n";
-    #PT_YIELD
-    $thread->{state} = __LINE__; return PT_YIELDED; }; $PT_THREAD_STATE eq __LINE__ and do {
-      print "second\n";
-    #PT_YIELD_UNTIL($cond)
-    $thread->{state} = __LINE__; return PT_YIELDED; }; $PT_THREAD_STATE eq __LINE__ and do { return PT_YIELDED unless ($cond);
-      print "third\n";
-    #PT_WAIT_UNTIL(pt, condition)
-    $thread->{state} = __LINE__;}; $PT_THREAD_STATE eq __LINE__ and do { return PT_WAITING unless ($cond);
-      print "third\n";
-    #PT_WAIT_WHILE(pt, cond)
-    $thread->{state} = __LINE__;}; $PT_THREAD_STATE eq __LINE__ and do { return PT_WAITING if ($cond);
-      print "forth\n";
-    #PT_WAIT_THREAD(pt, thread) PT_WAIT_WHILE((pt), PT_SCHEDULE(thread))      
-    #$thread->{state} = __LINE__;}; $PT_THREAD_STATE eq __LINE__ and do { return PT_WAITING if (execute($thread) == PT_WAITING);
-    #  print "fifth\n";
-    #PT_EXIT($thread);
-    }; $thread->{state} = 0; return PT_EXITED; };
+  my $PT_YIELD_FLAG = 1; goto $thread->{state} if $thread->{state};
+    print "first\n";
+  $PT_YIELD_FLAG = 0; $thread->{state} = "PT1"; PT1: return PT_YIELDED unless $PT_YIELD_FLAG;
+    print "second\n";
+  #PT_YIELD_UNTIL($cond)
+  $PT_YIELD_FLAG = 0; $thread->{state} = "PT2"; PT2: return PT_YIELDED return PT_YIELDED unless ($PT_YIELD_FLAG and $cond);
+    print "third\n";
+  #PT_WAIT_UNTIL(pt, condition)
+  $thread->{state} = "PT3"; PT3: return PT_WAITING unless ($cond);
+    print "third\n";
+  #PT_WAIT_WHILE(pt, cond)
+  $thread->{state} = "PT4"; PT4: return PT_WAITING if (!$cond);
+    print "forth\n";
+  #PT_WAIT_THREAD(pt, thread) PT_WAIT_WHILE((pt), PT_SCHEDULE(thread))      
+  #$thread->{state} = __LINE__;}; $PT_THREAD_STATE eq __LINE__ and do { return PT_WAITING if (execute($thread) == PT_WAITING);
+  #  print "fifth\n";
+  #PT_EXIT($thread);
+  $thread->{state} = ""; return PT_EXITED;
 };
 
 #PI_INIT
-my $thread = { state => 0 };
+my $thread = { state => "" };
 my $condition = 1;
 my $continue = time+5;
 my $print = time+1;
