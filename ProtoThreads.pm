@@ -124,7 +124,7 @@ FILTER_ONLY
       while (1) {
         ($success,$before,$arg,$after) = PT_NEXTCOMMAND($code,"PT_YIELD_UNTIL");
         if ($success) {
-          $code=$before."\$PT_YIELD_FLAG = 0; ".$thread."->{PT_THREAD_STATE} = 'PT_LABEL_$counter'; PT_LABEL_$counter: return PT_YIELDED unless (\$PT_YIELD_FLAG and $arg);".$after;
+          $code=$before."\$PT_YIELD_FLAG = 0; ".$thread."->{PT_THREAD_STATE} = 'PT_LABEL_$counter'; PT_LABEL_$counter: return PT_YIELDED unless (\$PT_YIELD_FLAG and ($arg));".$after;
           $counter++;
           next;
         }
