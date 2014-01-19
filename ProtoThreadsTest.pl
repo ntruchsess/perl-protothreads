@@ -77,7 +77,7 @@ sub thread(@) {
   PT_YIELD_UNTIL(($continue - time)<0);
   print time-$start." thread-$mode third\n";
   if ($mode == 1) {
-    PT_EXIT;
+    PT_EXIT if 1;
   };
   if ($mode == 2) {
     $text = "thread-2";

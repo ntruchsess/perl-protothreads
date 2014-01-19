@@ -155,12 +155,12 @@ FILTER_ONLY
           $code=$before.$arg."->{PT_THREAD_STATE} = 0; PT_WAIT_THREAD($arg);".$after;
           next;
         }
-        if ($code =~ /PT_EXIT\s*;/s) {
-          $code = $`.$thread."->{PT_THREAD_STATE} = 0; return PT_EXITED;".$';
+        if ($code =~ /PT_EXIT(\s*;|\s)/s) {
+          $code = $`.$thread."->{PT_THREAD_STATE} = 0; return PT_EXITED".$1.$';
           next;
         }
-        if ($code =~ /PT_RESTART\s*;/s) {
-          $code = $`.$thread."->{PT_THREAD_STATE} = 0; return PT_WAITING;".$';
+        if ($code =~ /PT_RESTART(\s*;|\s)/s) {
+          $code = $`.$thread."->{PT_THREAD_STATE} = 0; return PT_WAITING;".$1.$';
           next;
         }
         if ($code =~ /PT_END\s*;/s) {
