@@ -77,7 +77,7 @@ sub thread(@) {
   PT_YIELD_UNTIL(($continue - time)<0);
   print time-$start." thread-$mode third\n";
   if ($mode == 1) {
-    PT_EXIT if 1;
+    PT_EXIT(1) if 1;
   };
   if ($mode == 2) {
     $text = "thread-2";
@@ -109,4 +109,7 @@ do {
   $running2 = $thread2->PT_SCHEDULE(2) if $running2; 
   $running3 = $thread3->PT_SCHEDULE(3) if $running3; 
 } while ($running1 || $running2 || $running3);
+if ($thread1->PT_RETVAL()) {print "exitval1: ".$thread1->PT_RETVAL()."\n";};
+if ($thread2->PT_RETVAL()) {print "exitval2: ".$thread2->PT_RETVAL()."\n";};
+if ($thread3->PT_RETVAL()) {print "exitval3: ".$thread3->PT_RETVAL()."\n";};
 1;
